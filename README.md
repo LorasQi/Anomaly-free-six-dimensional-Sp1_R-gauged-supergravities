@@ -1,111 +1,125 @@
-Wolfram Language scans for 6D $N=(1,0)$ models
-This repository contains three independent Wolfram Language (`.wl`) programs for spectra with gauged $Sp(1)_R$:
-File	Model	How to specify a class	Main functions
-`n\_V=96 single\_factor\_scan.wl`	One nonabelian gauge factor, $n_V=96$, with possible drone vectors	Table 2 class number `1`–`48`	`classData`, `solveClass`, `scanAll`, `checkClass`
-`A2xU1.wl`	$A_2\times U(1)$, $n_V=12$	Pair `{p,k}`, passed as two arguments	`countA2U1Fiber`, `runA2U1CountAudit`, `exportA2U1Spectra`
-`A1 Cubed.wl`	$A_1^3$, Table 8	Table 8 class number `1`–`102`, or its branch triple	`a1CubedClass`, `countA1CubedFiber`, `runTable8CountAudit`, `exportA1CubedSpectra`
-All three files contain their representation data and class tables. They can be loaded independently; no companion notebook or data file is required. Loading a file defines its functions; it does not start an exhaustive scan. The first two files perform quick consistency checks when loaded. For the $A_1^3$ file, call `a1CubedCheckWitnesses\[]` to check its embedded examples.
-Load a file
-Open Mathematica and evaluate one of the following in a notebook. The file chooser avoids assumptions about the current working directory:
-```wl
-Get\[SystemDialogInput\["FileOpen"]]  (\* choose n\_V=96 single\_factor\_scan.wl \*)
-```
-or
-```wl
-Get\[SystemDialogInput\["FileOpen"]]  (\* choose A2xU1.wl \*)
-```
-or
-```wl
-Get\[SystemDialogInput\["FileOpen"]]  (\* choose A1 Cubed.wl \*)
-```
-If you already know the full path, use `Get\["/full/path/to/file.wl"]`. On Windows, forward slashes in the path also work, for example `Get\["C:/path/to/A2xU1.wl"]`. Start a fresh kernel when switching scans or after updating a file so that you know which definitions are loaded.
-One-factor scan: $n_V=96$
-The file includes the representation menu and 48 candidate anomaly-vector classes. A class is identified by its integer Table 2 number. For example, inspect class 38, then enumerate only that class:
-```wl
-classData\[38]               (\* group, anomaly data, representation menu, targets \*)
-one = solveClass\[38];       (\* list of spectra; may be empty \*)
-Length\[one]
-Take\[one, UpTo\[3]]          (\* first three spectra, if present \*)
-```
-Each spectrum is an association containing `"G"`, `"p"`, `"q"`, `"b"`, `"Drones"`, `"Singlets"`, `"HCharged"`, and `"Spectrum"`. The last field lists its nonzero irreducible representations, their Dynkin labels, dimensions, and multiplicities `"m"`. The multiplicity `m` is measured in full-hypermultiplet units; it can be `1/2` for a pseudoreal representation.
-To scan all 48 candidate classes and compare the counts with the paper:
-```wl
-allByClass = scanAll\[];
-classSummary\[allByClass]              (\* one row per class, including zeros \*)
-checkClass\[allByClass]
-showClass\[allByClass, 38]            (\* retrieve one scanned class \*)
-```
-`checkClass` reports `"ComputedTotal" -> 646`, `"ComputedBranches" -> 38`, and `"MatchesPaper" -> True` when the full result agrees with the reference table. It checks group totals as well as the overall counts. The scan can take time; `solveClass\[k]` is useful for trying one class first.
-Save the scan result in Wolfram Language format, then load it in a later session without rerunning the scan:
-```wl
-Put\[allByClass, "one\_factor\_by\_class.wl"];
-allByClass = Get\["one\_factor\_by\_class.wl"];
-```
-These one-factor spectra are seeds for the spectra-assembly procedure. A seed with drone vectors is not by itself a drone-free physical endpoint.
-$A_2\times U(1)$ scan
-Here a class is identified by $p\in{-25,-23,-17,-15,-9,-7,-1}$ and $k\in{1,2,3}$. For example, $(p,k)=(-25,1)$ is class 8:
-```wl
-a2u1ClassNumber\[-25, 1]                 (\* 8 \*)
-a2u1Targets\[-25, 1]                     (\* {256,156,480,96,96,50,0} \*)
-class8 = countA2U1Fiber\[-25, 1];
-class8\["InequivalentCount"]             (\* 231 \*)
-class8\["PassQ"]                         (\* True \*)
-```
-To list the actual spectra, request solutions explicitly:
-```wl
-class8 = countA2U1Fiber\[-25, 1, "ReturnSolutions" -> True];
-class8\["InequivalentCount"]
-Take\[class8\["Solutions"], UpTo\[5]]
-Dataset\[class8\["Solutions"]]
-```
-`"Solutions"` is a list of associations with only nonzero multiplicities. Keys such as `"3\_1"` and `"bar3\_1"` distinguish the charged complex orientations. Solutions are counted up to the simultaneous $U(1)$ charge reversal specified in the code. For the underlying integer vectors in the order `a2u1VariableOrder`, set `"FormattedSolutions" -> False` together with `"ReturnSolutions" -> True`.
-To export one class as a CSV (one column per representation/charge block):
-```wl
-exportA2U1Spectra\[-25, 1, "A2\_class8.csv"]
-```
-To audit all 21 physical no-drone classes:
-```wl
-audit = runA2U1CountAudit\[];
-audit\["ByK"]              (\* <|1 -> 813, 2 -> 22408, 3 -> 155317|> \*)
-audit\["ComputedTotal"]    (\* 178538 \*)
-audit\["MatchesPaper"]     (\* True \*)
-audit\["FailedClasses"]    (\* {} \*)
-```
-The $k=0$ sector contains seven additional formal drone classes and is excluded by default. Include it explicitly with `runA2U1CountAudit\["IncludeDrone" -> True]`. Calling the audit with `"ReturnSolutions" -> True`, or listing solutions for a large class, can use substantially more memory than counting alone.
-$A_1^3$ scan (Table 8)
-The file includes all 102 Table 8 class labels, reference counts, and one example spectrum per class. A class number maps to a branch triple ${r_1,r_2,r_3}$:
-```wl
-a1CubedCheckWitnesses\[]                       (\* {} if all examples pass \*)
-a1CubedClass\[36]                              (\* {1,1,2} \*)
-a1CubedSpectrum\[a1CubedWitness\[36]]           (\* one embedded example \*)
+# Wolfram Language scans for 6D $N=(1,0)$ $Sp(1)_R$-gauged models
 
-class36 = countA1CubedFiber\[a1CubedClass\[36]];
-class36\["InequivalentCount"]                  (\* 19 \*)
-```
-Pass `True` as the second argument to return every inequivalent spectrum in that class. The default call above computes the count without constructing the list of canonical representatives:
+This repository contains scans for the $n_V=96$ branch and the $n_V=12$ $A_2\times U(1)$ and $A_1^3$ branches. The archive `nV=96 branch.zip` contains the staged $n_V=96$ spectra-assembly calculation, its inputs, and saved outputs. The `n_V=96 single_factor_scan.wl` program, if included separately in the repository, is a separate one-factor interface.
+
+## $n_V=96$: staged spectra assembly
+
+Unzip `nV=96 branch.zip` to retain the `nV=96 branch/n=1/` through `nV=96 branch/n=5/` directories. If sharing the work on GitHub, upload the extracted directories as well so readers can browse the programs and results without downloading the whole archive.
+
+Here $n$ is the number of simple gauge factors other than $Sp(1)_R$. The assembly uses one-factor spectra as seeds, then lifts an $(n-1)$-factor spectrum together with a one-factor spectrum, imposing the local and mixed-anomaly constraints and removing duplicates under permutations of identical factors.
+
+| Stage | Main source | Archived result |
+| --- | --- | ---: |
+| $n=1$ | `n=1/n=1 scan.nb` and `n=1/n1_Sp1R_Catalogue.pdf` | 652 local spectra in the PDF; 646 after the common odd-lattice filter |
+| $n=2$ | `n=2/GTSA_n2_complete_scan.wl` | 1,968 |
+| $n=3$ | `n=3/GTSA_n3_complete_scan.wl` | 1,092 |
+| $n=4$ | `n=4/GTSA_n4_complete_scan.wl` | 388 |
+| $n=5$ | `n=5/GTSA_n5_complete_scan.wl` | 0 |
+
+The six one-factor spectra removed by the lattice filter are the denominator-three $G_2$ cases. The combined `all nV=96 anomaly free spectra.pdf` reports $646+1968+1092+388=4094$ retained spectra and no spectra for $n\geq5$. These counts include spectra with drone vectors; they are not counts of drone-free endpoints. Each stage imposes a nonnegative drone count $M_{\mathrm{drone}}=93-\sum_i\dim G_i$.
+
+### Representation-coefficient dictionary
+
+The short keys in the ZIP's `RepInfo.nb` files **do not have the same names as the representation coefficients in the paper**. The assembly drivers read them as follows:
+
+| `RepInfo.nb` key | Paper's coefficient | Internal driver field |
+| --- | --- | --- |
+| `a` | $B_R$, coefficient of $\operatorname{tr} F^4$ | `"QuarticB"` |
+| `b` | $C_R$, coefficient of $(\operatorname{tr} F^2)^2$ | `"QuadC"` |
+| `c` | $A_R$, quadratic trace index | `"IndexA"` |
+
+Thus the A1 fundamental entry `a -> 0, b -> 1/2, c -> 1` in `RepInfo.nb` means $B_{\mathbf2}=0,\ C_{\mathbf2}=1/2,\ A_{\mathbf2}=1$. The lowercase `a` and `b` keys in representation data are unrelated to the anomaly-lattice vectors $a$ and $b_i$. The assembly drivers use the off-diagonal lattice convention `eta = {{0,1},{1,0}}`, `aVec = {-2,-2}`, and `bRVec = {3/2,-5}`.
+
+### Read saved spectra without rerunning a scan
+
+Each `n=k/nk_GTSA_complete_outputs/` directory contains `nk_GTSA_all_spectra.wl` (a Wolfram Language list), a `.wxf` version, a readable `.txt` list, a final count CSV, and one text file per scanned group tuple. For example, in Mathematica, choose the saved **spectra** file:
+
 ```wl
-class36 = countA1CubedFiber\[a1CubedClass\[36], True];
-class36\["InequivalentCount"]                  (\* 19 \*)
-spectra36 = a1CubedSpectrum /@ class36\["Solutions"];
-Take\[spectra36, UpTo\[5]]
-Dataset\[spectra36]
+spectra2 = Get[SystemDialogInput["FileOpen"]];  (* select n2_GTSA_all_spectra.wl *)
+Length[spectra2]                                (* 1968 *)
+Take[spectra2, UpTo[3]]
+Dataset[spectra2]
 ```
-Each formatted spectrum has `"ChargedSMW"` (nonzero coefficients indexed by ordered representation triples such as `{2,1,1}`) and `"NeutralHypers"` (the number of neutral full hypers). The charged coefficients are in the code's SMW units: a pseudoreal representation permits one unit, while a real representation is constrained to even SMW multiplicity. `class36\["Solutions"]` itself contains the independent integer solver variables and the neutral count.
-Export all spectra in one class to CSV with a column for each representation triple:
+
+The archived `n5_GTSA_all_spectra.wl` evaluates to an empty list. The `*_counts_final.csv` files have one row per scanned group tuple; the last column is that tuple's count. The `n1_Sp1R_Catalogue.pdf` in each assembly folder is an input containing all 652 local one-factor spectra, **before** the six-entry lattice filter applied by the drivers.
+
+### Rerun an assembly stage
+
+A Wolfram/Mathematica installation with PDF import and `NotebookImport` is needed. Keep the folder structure intact. Each stage's driver reads its local `RepInfo.nb` and `n1_Sp1R_Catalogue.pdf`. Stages $n=3,4,5$ also read the respective preceding-stage snapshot `n2_GTSA_all_spectra.wl`, `n3_GTSA_all_spectra.wl`, or `n4_GTSA_all_spectra.wl` **in that stage's own folder**; these snapshots are included in the ZIP.
+
+The drivers contain a machine-specific default `$BaseDir` pointing to `C:\Physics\6d anomaly free models\n=k`. Before running a stage on another machine, edit the `$BaseDir` assignment near the beginning of **that stage's** `GTSA_nk_complete_scan.wl` to the absolute path of its extracted `n=k` directory. For example, for $n=2$:
+
 ```wl
-exportA1CubedSpectra\[36, "A1cubed\_class36.csv"]
+If[! ValueQ[$BaseDir], $BaseDir = "C:/path/to/nV=96 branch/n=2"];
 ```
-Audit the 102 classes, saving progress after each one. Running the same command again resumes from that checkpoint:
+
+Use the corresponding `n=3`, `n=4`, or `n=5` path for the other drivers. In the $n=2$ and $n=3$ drivers, ``ClearAll["Global`*"]`` at the beginning clears settings assigned in a notebook **before** `Get`; edit their default path inside the driver rather than relying on a preceding `$BaseDir = ...` input. The driver has `$RunNow = True` by default: loading it with `Get` starts the full scan and writes output files.
+
 ```wl
-table8Audit = runTable8CountAudit\[
-  "CheckpointFile" -> "table8\_audit\_progress.wl"
+Get["C:/path/to/nV=96 branch/n=2/GTSA_n2_complete_scan.wl"]
+```
+
+For $n=3,4,5$, replace both the stage number and filename. If you regenerate stage $n-1$, the next stage still reads its **bundled snapshot** unless you replace that snapshot or edit the next driver's `$N2SpectraWL`, `$N3SpectraWL`, or `$N4SpectraWL` path to point to the newly generated `nk_GTSA_complete_outputs/nk_GTSA_all_spectra.wl`. Run stages in order if you want every stage to use newly computed inputs. Full scans can be lengthy and will write their final files in the corresponding `nk_GTSA_complete_outputs` directory.
+
+## Optional standalone one-factor program
+
+If `n_V=96 single_factor_scan.wl` is also supplied in the repository, it can be loaded independently of the ZIP. Its 48 candidate classes are labeled by the paper's Table 2 class numbers:
+
+```wl
+Get[SystemDialogInput["FileOpen"]];       (* select n_V=96 single_factor_scan.wl *)
+classData[38]
+one = solveClass[38];
+Length[one]
+allByClass = scanAll[];
+checkClass[allByClass]
+showClass[allByClass, 38]
+```
+
+That standalone program reports 646 spectra across 38 nonempty branches after the lattice conditions. Its functions, output format, and representation data are distinct from the ZIP's `n=1/n=1 scan.nb` and staged GTSA drivers. A seed with drones is not itself a drone-free endpoint.
+
+## $n_V=12$: $A_2\times U(1)$
+
+The self-contained `A2xU1.wl` file uses the off-diagonal metric `{{0,1},{1,0}}` and `a = {-2,-2}`. Classes are specified by $(p,k)$, with $p\in\{-25,-23,-17,-15,-9,-7,-1\}$ and $k=1,2,3$ in the no-drone scan. Load it in a fresh kernel:
+
+```wl
+Get[SystemDialogInput["FileOpen"]];          (* select A2xU1.wl *)
+a2u1ClassNumber[-25, 1]                 (* 8 *)
+class8 = countA2U1Fiber[-25, 1, "ReturnSolutions" -> True];
+class8["InequivalentCount"]              (* 231 *)
+Take[class8["Solutions"], UpTo[5]]
+exportA2U1Spectra[-25, 1, "A2_class8.csv"]
+
+audit = runA2U1CountAudit[];
+audit["ByK"]                             (* <|1 -> 813, 2 -> 22408, 3 -> 155317|> *)
+audit["ComputedTotal"]                   (* 178538 *)
+audit["MatchesPaper"]                    (* True *)
+```
+
+The $k=0$ formal drone classes are excluded by default; use `runA2U1CountAudit["IncludeDrone" -> True]` to include them. Counting without `"ReturnSolutions" -> True` uses less memory.
+
+## $n_V=12$: $A_1^3$
+
+The self-contained `A1 Cubed.wl` file has 102 Table 8 classes. One class can be specified by its table number or mapped to an ordered branch triple:
+
+```wl
+Get[SystemDialogInput["FileOpen"]];        (* select A1 Cubed.wl *)
+a1CubedCheckWitnesses[]               (* {} if all embedded examples pass *)
+a1CubedClass[36]                       (* {1,1,2} *)
+class36 = countA1CubedFiber[a1CubedClass[36], True];
+class36["InequivalentCount"]            (* 19 *)
+Take[a1CubedSpectrum /@ class36["Solutions"], UpTo[5]]
+exportA1CubedSpectra[36, "A1cubed_class36.csv"]
+
+table8Audit = runTable8CountAudit[
+  "CheckpointFile" -> "table8_audit_progress.wl"
 ];
-table8Audit\["BranchesChecked"]              (\* 102 after completion \*)
-table8Audit\["ComputedTotal"]                (\* 4337331 \*)
-table8Audit\["MatchesPaper"]                 (\* True \*)
-table8Audit\["FailedClasses"]                (\* {} \*)
+table8Audit["ComputedTotal"]            (* 4337331 *)
+table8Audit["MatchesPaper"]             (* True *)
 ```
-`runTable8CountAudit\[]` performs a fresh scan without writing a checkpoint. The full scan can take substantial time and memory. Listing a large class with `countA1CubedFiber\[branch, True]` or exporting its spectra requires additional memory. The checkpoint records counts, not the spectra themselves; enumerate a class separately to list its spectra.
-Conventions and outputs
-The three scans concern different branches. The $A_2\times U(1)$ and $A_1^3$ files use the off-diagonal metric `{{0,1},{1,0}}` with `a = {-2,-2}`. The optional `a2u1OddEmbedding\[p,k]` describes a separate integral embedding; it is not the coordinate system used for the $A_2\times U(1)$ scan. The one-factor file uses the odd diagonal basis described in its Table 2 data and the paper's representation coefficients $a_R=A_R$, $b_R=B_R$, $c_R=C_R$. Do not mix the coordinate systems or class labels.
-`Export` and `Put` write relative filenames to Mathematica's current directory, which you can inspect with `Directory\[]`. To select an explicit destination, supply an absolute filename or build one with `FileNameJoin`.
+
+The audit can take substantial time. The checkpoint stores counts so rerunning with the same filename resumes the audit; listing all spectra for a large class takes additional memory.
+
+## Working with output files
+
+`Get` reads a saved Wolfram Language `.wl` expression. `Put` and `Export` write relative filenames to Mathematica's current directory; check it with `Directory[]` or supply an absolute filename. Start a fresh kernel when switching independent scans to avoid stale definitions.
+
